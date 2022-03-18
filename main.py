@@ -258,3 +258,91 @@ thompsonSimulation(start,transitions)
 with open("FILE.txt", "w", encoding="utf-8") as f:
     f.write(file)
 f.close()
+
+# We initialize the automata
+automata, fValues = automataAFD.afn(start,transitions,symbols)
+
+#We select our states and remove the repeats
+key = []
+acceptA = []
+for i in fValues:
+    for j in i:
+        if(j == accept[0]):
+            key.append(i)
+resT = [] 
+for i in key: 
+    if i not in resT: 
+        resT.append(i) 
+key = resT
+
+# Here we create the dictionary to assign to the states
+newDictionary = {}
+counter = 0
+newValues = fValues.copy()
+
+for i in newValues:
+    newDictionary[tuple(i)] = counter
+    counter +=1
+
+for item in automata:
+    item[0]= str(newDictionary.get(tuple(item[0])))
+    item[2]= str(newDictionary.get(tuple(item[2])))
+
+for item in key:
+    acceptA.append(str(newDictionary.get(tuple(item))))
+
+# here we graph our automata
+fa = Digraph('finite_state_machine', filename='fsam.gv')
+fa.attr(rankdir='LR', size='8,5')
+
+for i in acceptA:
+    fa.attr('node', shape='doublecircle')
+    fa.node(i)
+
+# We get the data
+statesA = []
+symbolsA = []
+resT = [] 
+
+for i in automata: 
+    if i not in resT: 
+        resT.append(i) 
+automata = resT
+
+for i in automata:
+    statesA.append(i[0])
+    statesA.append(i[2])
+    fa.attr('node', shape='circle')
+    fa.edge(str(i[0]), str(i[2]), label=str(i[1]))
+resT = [] 
+
+for i in statesA: 
+    if i not in resT: 
+        resT.append(i) 
+statesA = resT
+startA = [automata[0][0]]
+
+# Subset simulation method
+def setsSimulation(ini,trans):
+    s = ini
+    cont =0 
+    for c in w:
+        s = (mov(s, c,trans))
+        
+    for i in acceptA:
+        if(i in s):
+            cont+=1
+
+
+file = f'''
+states = {statesA}
+symbols = {symbols}
+start = {startA}
+accept = {acceptA}
+transitions = {automata}
+'''
+with open("FILE.txt", "a", encoding="utf-8") as f:
+    f.write(file)
+f.close()
+setsSimulation(startA,automata)
+fa.view()
