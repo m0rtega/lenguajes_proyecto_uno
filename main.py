@@ -346,3 +346,298 @@ with open("FILE.txt", "a", encoding="utf-8") as f:
 f.close()
 setsSimulation(startA,automata)
 fa.view()
+
+AFDDclass = tree.Tree()
+values = []
+ops = []
+i = 0 
+nodes = []
+
+rAFD = "("+rAFD+")#"
+rAFD = transformRegex(rAFD)
+rAFD = addPeriod(rAFD) 
+regex = rAFD
+
+while i < len(regex):
+    if regex[i] == '(':
+        ops.append(regex[i])
+    elif regex[i].isalpha() or regex[i].isdigit() or regex[i] == '#':
+        values.append(regex[i])
+    elif regex[i] == ')':
+        while len(ops) != 0 and ops[-1] != '(':
+            op = ops.pop()
+            if op != '*':
+                val2 = values.pop()
+                val1 = values.pop()
+                temp = val1+op+val2
+                nodes.append(temp)
+                if(op == '|'):
+                    AFDDclass.generateLeavesPipe(val1,val2,op)
+                elif(op == '.'):
+                    AFDDclass.generateNodeCat(val1,val2,op)
+                values.append(temp)
+        ops.pop()
+    else:
+        if(regex[i] != '*'):
+            while (len(ops) != 0 and getPrecedence(ops[-1]) >= getPrecedence(regex[i])):
+                val2 = values.pop()
+                val1 = values.pop()
+                op = ops.pop()
+                temp = val1+op+val2
+                nodes.append(temp)
+                if(op == '|'):
+                    AFDDclass.generateLeavesPipe(val1,val2,op)
+                    
+                elif(op == '.'):
+                    AFDDclass.generateNodeCat(val1,val2,op)
+                    
+                values.append(temp)
+            ops.append(regex[i])
+        else:
+            
+            val1 = values.pop()
+            op = regex[i]
+            temp = val1+op
+            
+            AFDDclass.generateNodeStar(val1,op)
+            
+            nodes.append(temp)
+            values.append(temp)
+    i+=1
+
+while len(ops) != 0:
+    val2 = values.pop()
+    val1 = values.pop()
+    op = ops.pop()
+    temp = val1+op+val2
+    nodes.append(temp)
+    if(op == '|'):
+        AFDDclass.generateLeavesPipe(val1,val2,op)
+    elif(op == '.'):
+        AFDDclass.generateNodeCat(val1,val2,op)
+    else:
+        print("Not a recognized symbol")
+    values.append(temp)
+
+
+# We get the tree
+trees = AFDDclass.getNodes()
+accept = []
+
+# We get the accept state
+for i in trees:
+    if(i.getValue() =='#'):
+        accept.append(i.getImportantId())
+
+importantValues = AFDDclass.getImportantValues()
+symbols = []
+
+# Method to see if the value is nullable
+def nullable(element):
+    # We need to see if its a leaf, if it is, it cant have children
+    if(len(element.getChildren()) > 0):
+
+        if(element.getValue() == "|"):
+            c1 = nullable(element.getChildren()[0])
+            c2 = nullable(element.getChildren()[1])
+            if(c1 or c2):
+                return True
+            else:
+                return False
+        elif(element.getValue() == "."):
+            c1 = nullable(element.getChildren()[0])
+            c2 = nullable(element.getChildren()[1])
+            if(c1 and c2):
+                return True
+            else:
+                return False
+        else:
+            return True
+    else:
+        if(element.getValue() != "ε"):
+            return False
+        else:
+            return True
+
+# We get the first position of the element
+def firstPos(element):
+    # We need to see if its a leaf, if it is, it cant have children
+    if(len(element.getChildren()) > 0):
+        if(element.getValue() == "|"):
+            c1 = firstPos(element.getChildren()[0])
+            c2 = firstPos(element.getChildren()[1])
+            resp = (c1)+(c2)
+            return resp
+        elif(element.getValue() == "."):
+            h1 = (element.getChildren()[0])
+            if(nullable(h1)):
+                c1 = firstPos(element.getChildren()[0])
+                c2 = firstPos(element.getChildren()[1])
+                resp = (c1)+(c2)
+                return resp
+            else:
+                c1 = firstPos(element.getChildren()[0])
+                return c1
+        else:
+            return firstPos(element.getChildren()[0])
+    else:
+        if(element.getValue() != "ε"):
+            return [element.getImportantId()]
+        else:
+            return []
+
+# We get the last position of the element
+def lastPos(element):
+    # We need to see if its a leaf, if it is, it cant have children
+    if(len(element.getChildren()) > 0):
+        if(element.getValue() == "|"):
+            c1 = lastPos(element.getChildren()[0])
+            c2 = lastPos(element.getChildren()[1])
+            resp = (c1)+(c2)
+            return resp
+        elif(element.getValue() == "."):
+            h2 = (element.getChildren()[1])
+            if(nullable(h2)):
+                c1 = lastPos(element.getChildren()[0])
+                c2 = lastPos(element.getChildren()[1])
+                resp = (c1)+(c2)
+                return resp
+            else:
+                c2 = lastPos(element.getChildren()[1])
+                return c2
+        else:
+            return lastPos(element.getChildren()[0])
+    else:
+        if(element.getValue() != "ε"):
+            return [element.getImportantId()]
+        else:
+            return []
+
+
+# We get the following position of the element
+def followPos(element):
+    # We need to see if its a leaf, if it is, it cant have children
+    if(len(element.getChildren()) > 0):
+        if(element.getValue() == "|"):
+            c1 = lastPos(element.getChildren()[0])
+            c2 = lastPos(element.getChildren()[1])
+            resp = (c1)+(c2)
+            return resp
+        elif(element.getValue() == "."):
+            h2 = (element.getChildren()[1])
+            if(nullable(h2)):
+                c1 = lastPos(element.getChildren()[0])
+                c2 = lastPos(element.getChildren()[1])
+                resp = (c1)+(c2)
+                return resp
+            else:
+                c2 = lastPos(element.getChildren()[1])
+                return c2
+        else:
+            return lastPos(element.getChildren()[0])
+    else:
+        if(element.getValue() != "ε"):
+            return [element.getImportantId()]
+        else:
+            return []
+
+# We get the nodes positions
+positions = []
+for i in trees:
+    positions.append((i,firstPos(i),lastPos(i)))
+followValues = []
+followPosition = []
+followTotal = []
+
+# We assign the following position
+for i in positions:
+    if(i[0].getValue() == "."):
+        hijo1 =  i[0].getChildren()[0]
+        hijo2 =  i[0].getChildren()[1]
+        for posicion in positions:
+            if(posicion[0]==hijo1):
+                followValues.append(posicion[2])
+                followTotal.append(posicion[2])
+            if(posicion[0]==hijo2):
+                followPosition.append(posicion[1])
+                followTotal.append(posicion[1])
+    elif(i[0].getValue() == "*"):
+        followValues.append(i[2])
+        followPosition.append(i[1])
+        followTotal.append(i[2])
+        followTotal.append(i[1])
+
+result = []
+for i in followValues:
+    for j in i:
+        result.append([j])
+
+for i in range(len(followValues)):
+    for j in followValues[i]:
+        for asd in followPosition[i]:
+            result[j-1].append(asd)
+
+for i in result:
+    i.pop(0)
+cont = 0
+
+for i in (result):
+    if(len(i)==0):
+        cont+=1
+    if (cont>1 and len(i)==0):
+        result.remove(i)
+rest = []
+
+for elem in result: 
+    a = list(set(elem))
+    rest.append(a)
+result = rest
+
+for i in result:
+    if(len(i) < 1):
+        result.remove(i)
+
+# We get the symbols of the tree
+for i in trees:
+    if(i.getValue() != "#" and i.getValue() != "ε" and len(i.getChildren()) < 1):
+        symbols.append(i.getValue())
+resT = [] 
+
+for i in symbols: 
+    if i not in resT: 
+        resT.append(i) 
+symbols = resT
+
+for i in positions:
+    if(i[0].getParentId() == ""):
+        firstPosRoot = i[1]
+
+# We create the states of the final automata
+def Direct(firstPosRoot, symbols, importantValues):
+    dStates = [firstPosRoot]
+    numbers = []
+    U = []
+    newTransitions = []
+    for i in dStates:
+        for j in symbols:
+            for k in importantValues:
+                if(j == k[0].getValue() and (k[0].getImportantId() in i)):
+                    numbers.append(k[0].getImportantId())
+
+            for h in numbers:
+                U += result[h-1]
+            test = []
+
+            for letter in U:
+                if letter not in test:
+                    test.append(letter)
+            U = test            
+
+            if (U not in dStates):
+                dStates.append(U)
+            if (len(U)>=1):
+                newTransitions.append([i,j,U])
+            U = []
+            numbers.clear() 
+
+    return newTransitions, dStates
