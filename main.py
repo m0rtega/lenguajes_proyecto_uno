@@ -641,3 +641,67 @@ def Direct(firstPosRoot, symbols, importantValues):
             numbers.clear() 
 
     return newTransitions, dStates
+
+    # We get the automata
+newTransitions, dStates = Direct(firstPosRoot, symbols, importantValues)
+key = []
+acceptA = []
+for i in dStates:
+    for j in i:
+        if(j == accept[0]):
+            key.append(i)
+
+# We create the dictionary to assign the new values to the automata states
+newDictionary = {}
+counter = 0
+newValues = dStates.copy()
+for i in newValues:
+    newDictionary[tuple(i)] = counter
+    counter +=1
+for item in key:
+    acceptA.append(str(newDictionary.get(tuple(item))))
+
+for item in newTransitions:
+    item[0]= str(newDictionary.get(tuple(item[0])))
+    item[2]= str(newDictionary.get(tuple(item[2])))
+
+# AFD Simulation
+def afdSimulation(ini,trans):
+    s = ini
+    cont = 0
+    for c in w:
+        s = (mov(s, c,trans))
+    for i in acceptA:
+        if(i in s):
+            cont+=1
+
+# We graph the automata
+fad = Digraph('finite_state_machine', filename='fsmasd.gv')
+fad.attr(rankdir='LR', size='8,5')
+for i in acceptA:
+    fad.attr('node', shape='doublecircle')
+    fad.node(i)
+statesA = []
+for i in newTransitions:
+    statesA.append(i[0])
+    statesA.append(i[2])
+    fad.attr('node', shape='circle')
+    fad.edge(i[0], i[2], label=i[1])
+fad.view()
+resT = [] 
+for i in statesA: 
+    if i not in resT: 
+        resT.append(i) 
+statesA = resT
+
+file = f'''
+states = {statesA}
+symbols = {symbols}
+start = {[newTransitions[0][0]]}
+accept = {acceptA}
+transitions = {newTransitions}
+'''
+afdSimulation([newTransitions[0][0]],newTransitions)
+with open("FILE.txt", "a", encoding="utf-8") as f:
+    f.write(file)
+f.close()
