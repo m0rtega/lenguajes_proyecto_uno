@@ -53,3 +53,43 @@ def verifyParenthesis(regex):
         return True
     else:
         return False
+
+# Adds a period everytime it is needed, this eases its lecture
+def addPeriod(regex):
+    i = 0
+    expr = ''
+    cont = 0 
+    while i < len(regex):
+        if (regex[i] == '|'):
+            cont = 0
+        elif(regex[i] == '('):
+            if (cont == 1):
+                expr = expr + '.'
+                cont = 0;
+        elif(regex[i] == ')' or regex[i] == '*'):
+            pass
+        else:
+            cont = cont + 1
+        if(cont == 2):
+            expr = expr+'.'+regex[i]
+            cont = 1
+        else:
+            expr = expr + regex[i]
+        i += 1
+    return expr
+
+#Assigns the precedence every operation has in descending order
+def getPrecedence(sym):
+    if (sym == '*'):
+        return 3
+    if (sym == '.'):
+        return 2
+    if (sym == '|'):
+        return 1
+    return 0
+
+# If the regex is valid, the program continues
+if(verifyParenthesis(regex)):
+    pass
+else:
+    sys.exit()
