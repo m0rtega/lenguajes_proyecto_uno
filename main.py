@@ -1,3 +1,7 @@
+import thompson, AFD, tree
+from graphviz import Digraph
+import sys
+
 # Inputs
 regex = input("ingrese la expresion regular: ")
 w = input("ingrese la cadena a evaluar: ")
