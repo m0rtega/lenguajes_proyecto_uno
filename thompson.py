@@ -184,6 +184,52 @@ class Automata:
             self.initialState = structures[0][0]
             self.finalState = structures[-1][1]
             
+    # Kleene
+    def generateNodeStar(self,val1,op):
+        global id
+
+        if(len(val1) == 1 and op =='*'):
+            # node 1 
+            id+=1
+            nodeI1 = node.Node(id,val1,[id+1])
+            self.nodes.append(nodeI1)
+            # node 2
+            id+=1
+            nodeF1 = node.Node(id,'',[])
+            self.nodes.append(nodeF1)
+            # nodes operations
+            id+=1
+            nodeIS = node.Node(id,'ε',[nodeI1.getId()])
+            self.nodes.append(nodeIS)
+            id+=1
+            nodeFS = node.Node(id,'',[])
+            self.nodes.append(nodeFS)
+            # updated nodes 
+            nodeF1.setValue('ε')
+            nodeF1.setTransition(nodeFS.getId())
+            nodeF1.setTransition(nodeI1.getId())
+            nodeIS.setTransition(nodeFS.getId())
+            structures.append((nodeIS.getId(),nodeFS.getId()))
+            self.initialState = structures[0][0]
+            self.finalState = structures[-1][1]
+        else:
+            # nodes operations
+            id+=1
+            nodeIS = node.Node(id,'ε',[structures[-1][0]])
+            self.nodes.append(nodeIS)
+            id+=1
+            nodeFS = node.Node(id,'',[])
+            self.nodes.append(nodeFS)
+            # updated nodes
+            nodeF1 = self.nodes[ structures[-1][1]-1 ]  
+            nodeF1.setValue('ε')
+            nodeF1.setTransition(nodeFS.getId())
+            nodeF1.setTransition(self.nodes[structures[-1][0]-1].getId())
+            nodeIS.setTransition(nodeFS.getId())
+            structures.pop()
+            structures.append((nodeIS.getId(),nodeFS.getId()))
+            self.initialState = structures[0][0]
+            self.finalState = structures[-1][1]
             
             
             
