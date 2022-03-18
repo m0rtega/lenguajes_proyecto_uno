@@ -210,7 +210,6 @@ for i in symbols:
     if i not in resT: 
         resT.append(i) 
 symbols = resT
-
 # Lock method to simulate algorithms
 def lockE(statesLock,trans):
         lock = []
